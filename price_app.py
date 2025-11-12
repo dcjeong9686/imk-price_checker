@@ -22,11 +22,10 @@ st.markdown(
         background: {IMK_BLUE} !important;
     }}
     [data-testid="stSidebar"] * {{
-        color: #ffffff !important;
+        color: #000000 !important; /* 글씨 검정색으로 변경 */
     }}
-    /* 링크 가독성 */
     [data-testid="stSidebar"] a {{
-        color: #ffffff !important;
+        color: #000000 !important;
         text-decoration: underline;
     }}
     </style>
@@ -43,7 +42,7 @@ if "search_history" not in st.session_state:
 # -----------------------------
 # 본문 UI
 # -----------------------------
-st.title("핑 가격 비교")
+st.title("쇼핑 가격 비교")
 st.write("상품명을 입력하면 네이버 쇼핑 API를 통해 가격/이미지/쇼핑몰 정보를 최저가 순으로 표로 제공합니다.")
 
 # 검색 입력
