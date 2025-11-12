@@ -2,111 +2,56 @@ import streamlit as st
 import pandas as pd
 from price_search import search_product_prices
 
-# -----------------------------
-# 페이지 설정
-# -----------------------------
 st.set_page_config(
-    page_title="네이버 쇼핑 가격 비교",
+    page_title="가격 비교",
     page_icon=None,
     layout="wide",
 )
 
-# -----------------------------
-# 사이드바 색상/스타일 (IMK Blue)
-# -----------------------------
-IMK_BLUE = "#003594"  # 아이마켓코리아 블루 근사값
-
-st.markdown(
-    f"""
-    <style>
-    /* 사이드바 배경 */
-    [data-testid="stSidebar"] {{
-        background: {IMK_BLUE} !important;
-    }}
-
-    /* 사이드바 기본 글씨: 흰색 */
-    [data-testid="stSidebar"] * {{
-        color: #ffffff !important;
-    }}
-
-    /* 사이드바 내 버튼(검색 이력/초기화)은 흰 배경 + 검정 글씨 */
-    [data-testid="stSidebar"] button {{
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border-radius: 6px !important;
-        border: none !important;
-        margin-bottom: 6px !important;
-        font-weight: 600 !important;
-        box-shadow: none !important;
-    }}
-
-    /* 사이드바 링크 가독성 */
-    [data-testid="stSidebar"] a {{
-        color: #ffffff !important;
-        text-decoration: underline;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# -----------------------------
-# 세션 상태 초기화 (검색 이력/트리거)
-# -----------------------------
-if "search_history" not in st.session_state:
-    st.session_state.search_history = []          # 검색어 저장 (최대 10개, 최신이 뒤)
-if "selected_query" not in st.session_state:
-    st.session_state.selected_query = None        # 이력 클릭 시 사용할 값
-if "trigger_research" not in st.session_state:
-    st.session_state.trigger_research = False     # 자동 재검색 트리거
-
-# -----------------------------
-# 본문
-# -----------------------------
-st.title("네이버 쇼핑 가격 비교 대시보드")
-st.write("상품명을 입력하면 네이버 쇼핑 API를 통해 가격/이미지/쇼핑몰 정보를 최저가 순으로 표로 제공합니다.")
+st.title("가격 비교")
+st.write("상품명을 입력하면 네이버 쇼핑 API를 통해 가격/이미지/쇼핑몰 정보를 표로 제공합니다.")
 
 # 입력 영역
-query = st.text_input("상품명 입력", value="아이패드")
+col1, col2 = st.columns([2, 1])
+with col1:
+    query = st.text_input("상품명 입력", value="")
+with col2:
+    max_results = st.radio("표시할 상품 개수", [5, 10, 15, 20], index=1, horizontal=True)
 
-# 표시 개수: 슬라이더 → 라디오(클릭형)로 변경
-count_options = [5, 10, 15, 20]
-max_results = st.radio("표시할 상품 개수", options=count_options, index=1, horizontal=True)
+# 정렬 옵션
+sort_choice = st.radio("정렬 옵션", ["관련도순", "가격순"], index=0, horizontal=True)
+sort_mode = "sim" if sort_choice == "관련도순" else "asc"
+
+# 제외 키워드
+exclude_text = st.text_input("제외 키워드 (쉼표로 구분, 예: 중고,케이스,리퍼)")
+exclude_keywords = [t.strip() for t in exclude_text.split(",") if t.strip()]
 
 # 검색 버튼
 do_search = st.button("검색")
 
-# -----------------------------
-# 사이드바: 검색 이력
-# -----------------------------
-with st.sidebar:
-    st.header("검색 이력")
+# 메모장 기능
+if "memo_text" not in st.session_state:
+    st.session_state.memo_text = ""
 
-    if st.button("검색 이력 초기화"):
-        st.session_state.search_history = []
+with st.expander("메모장", expanded=False):
+    st.session_state.memo_text = st.text_area("메모", value=st.session_state.memo_text, height=160)
+    colm1, colm2, colm3 = st.columns([1, 1, 2])
+    with colm1:
+        if st.button("메모 저장"):
+            st.success("메모가 저장되었습니다.")
+    with colm2:
+        if st.button("메모 지우기"):
+            st.session_state.memo_text = ""
+            st.experimental_rerun()
+    with colm3:
+        st.download_button(
+            label="메모 다운로드(.txt)",
+            data=st.session_state.memo_text.encode("utf-8"),
+            file_name="memo.txt",
+            mime="text/plain",
+        )
 
-    # 최신 10개만 표시 (최신이 아래에 쌓이므로 슬라이스 후 순방향 출력)
-    if st.session_state.search_history:
-        last_10 = st.session_state.search_history[-10:]
-        for i, q in enumerate(last_10, start=1):
-            # 각 이력은 버튼으로 표시: 흰 배경/검정 글씨(위 CSS 적용)
-            if st.button(f"{i}. {q}", key=f"hist_{i}"):
-                st.session_state.selected_query = q
-                st.session_state.trigger_research = True  # 클릭 즉시 재검색 트리거
-
-    st.caption("최근 10개 검색어까지만 유지됩니다.")
-
-# -----------------------------
-# 이력 클릭 시 자동 재검색
-# -----------------------------
-if st.session_state.get("trigger_research", False):
-    query = st.session_state.selected_query or query
-    st.session_state.trigger_research = False
-    do_search = True  # 버튼을 누르지 않아도 재검색하도록 플래그 설정
-
-# -----------------------------
 # 검색 실행
-# -----------------------------
 items = []
 if do_search:
     if not query.strip():
@@ -114,29 +59,28 @@ if do_search:
     else:
         with st.spinner("네이버 쇼핑에서 가격 정보를 가져오는 중입니다..."):
             try:
-                items = search_product_prices(query, max_results=max_results)
+                items = search_product_prices(query, max_results=max_results, sort_mode=sort_mode)
             except Exception as e:
                 st.error(f"검색 중 오류가 발생했습니다: {e}")
                 items = []
 
-        # 검색 이력 업데이트 (연속 중복 방지 + 최대 10개 유지)
-        if query:
-            if not st.session_state.search_history or st.session_state.search_history[-1] != query:
-                st.session_state.search_history.append(query)
-                if len(st.session_state.search_history) > 10:
-                    overflow = len(st.session_state.search_history) - 10
-                    st.session_state.search_history = st.session_state.search_history[overflow:]
+        # 제외 키워드 필터링
+        if exclude_keywords and items:
+            filtered = []
+            for row in items:
+                title_lower = row["title"].lower()
+                if any(kw.lower() in title_lower for kw in exclude_keywords):
+                    continue
+                filtered.append(row)
+            items = filtered
 
-# -----------------------------
 # 결과 표시
-# -----------------------------
 if do_search:
     if not items:
         st.info("검색 결과가 없거나, 가격/이미지 정보가 없는 상품입니다.")
     else:
-        st.success(f"총 {len(items)}개 상품을 최저가 순으로 정렬했습니다.")
+        st.success(f"총 {len(items)}개 상품을 표시합니다. (정렬: {sort_choice})")
 
-        # DataFrame으로 변환 및 컬럼 순서 정리
         df = pd.DataFrame(items)
         df = df[["image_url", "title", "price", "mall_name", "link"]]
 
