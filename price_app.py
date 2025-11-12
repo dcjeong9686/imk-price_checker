@@ -11,25 +11,37 @@ st.set_page_config(
 st.title("가격 비교")
 st.write("상품명을 입력하면 네이버 쇼핑 API를 통해 가격/이미지/쇼핑몰 정보를 표로 제공합니다.")
 
-# 입력 영역
-col1, col2 = st.columns([2, 1])
-with col1:
-    query = st.text_input("상품명 입력", value="")
-with col2:
+# -----------------------------
+# 1. 검색어 입력
+# -----------------------------
+query = st.text_input("상품명 입력", value="")
+
+# -----------------------------
+# 2. 정렬 옵션 + 표시 개수 → 같은 줄에 배치
+# -----------------------------
+col_sort, col_count = st.columns([1, 1.2])
+
+with col_sort:
+    sort_choice = st.radio("정렬 옵션", ["관련도순", "가격순"], index=0, horizontal=True)
+    sort_mode = "sim" if sort_choice == "관련도순" else "asc"
+
+with col_count:
     max_results = st.radio("표시할 상품 개수", [5, 10, 15, 20], index=1, horizontal=True)
 
-# 정렬 옵션
-sort_choice = st.radio("정렬 옵션", ["관련도순", "가격순"], index=0, horizontal=True)
-sort_mode = "sim" if sort_choice == "관련도순" else "asc"
-
-# 제외 키워드
+# -----------------------------
+# 3. 제외 키워드
+# -----------------------------
 exclude_text = st.text_input("제외 키워드 (쉼표로 구분, 예: 중고,케이스,리퍼)")
 exclude_keywords = [t.strip() for t in exclude_text.split(",") if t.strip()]
 
-# 검색 버튼
+# -----------------------------
+# 4. 검색 버튼
+# -----------------------------
 do_search = st.button("검색")
 
-# 메모장 기능
+# -----------------------------
+# 5. 메모장 기능
+# -----------------------------
 if "memo_text" not in st.session_state:
     st.session_state.memo_text = ""
 
@@ -51,7 +63,9 @@ with st.expander("메모장", expanded=False):
             mime="text/plain",
         )
 
-# 검색 실행
+# -----------------------------
+# 6. 검색 실행
+# -----------------------------
 items = []
 if do_search:
     if not query.strip():
@@ -74,7 +88,9 @@ if do_search:
                 filtered.append(row)
             items = filtered
 
-# 결과 표시
+# -----------------------------
+# 7. 결과 표시
+# -----------------------------
 if do_search:
     if not items:
         st.info("검색 결과가 없거나, 가격/이미지 정보가 없는 상품입니다.")
