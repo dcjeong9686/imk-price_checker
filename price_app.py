@@ -22,10 +22,19 @@ st.markdown(
         background: {IMK_BLUE} !important;
     }}
     [data-testid="stSidebar"] * {{
-        color: #000000 !important; /* 글씨 검정색으로 변경 */
+        color: #ffffff !important; /* 전체 글씨 흰색 */
+    }}
+    /* 검색 이력 버튼 및 초기화 버튼만 흰 배경 + 검정 글씨 */
+    [data-testid="stSidebar"] button {{
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border-radius: 6px !important;
+        border: none !important;
+        margin-bottom: 6px !important;
+        font-weight: 600 !important;
     }}
     [data-testid="stSidebar"] a {{
-        color: #000000 !important;
+        color: #ffffff !important;
         text-decoration: underline;
     }}
     </style>
