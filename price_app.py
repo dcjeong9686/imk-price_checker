@@ -18,7 +18,7 @@ st.write("상품명을 입력하면 네이버 쇼핑 API를 통해 가격/이미
 # -----------------------------
 col_q, col_cnt = st.columns([2, 1])
 with col_q:
-    query = st.text_input("상품명 입력", value="아이패드")
+    query = st.text_input("상품명 입력", value="")
 with col_cnt:
     max_results = st.radio("표시할 상품 개수", [5, 10, 15, 20], index=1, horizontal=True)
 
